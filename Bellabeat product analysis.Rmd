@@ -1,0 +1,371 @@
+---
+title: "Bellabeat Product Analysis"
+author: "Yt"
+date: "2024-08-22"
+output: html_document
+---
+
+## Research Questions
+
+1. What are some trends in smart device usage?
+2. How could these trends apply to Bellabeat customers?
+3. How could these trends help influence Bellabeat's marketing strategy?
+
+## Data Preparation
+
+```{r loading packages}
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+```{r importing data}
+daily_activity <- read.csv("/Users/yitingcheng/Documents/Certificates/Google/Basic/8. Case Study/Case Study 2/Raw Data/dailyActivity_merged.csv")
+daily_calories <- read.csv("/Users/yitingcheng/Documents/Certificates/Google/Basic/8. Case Study/Case Study 2/Raw Data/dailyCalories_merged.csv")
+daily_intensities <- read.csv("/Users/yitingcheng/Documents/Certificates/Google/Basic/8. Case Study/Case Study 2/Raw Data/dailyIntensities_merged.csv")
+hourly_intensities <- read.csv("/Users/yitingcheng/Documents/Certificates/Google/Basic/8. Case Study/Case Study 2/Raw Data/hourlyIntensities_merged.csv")
+sleep_day <- read.csv("/Users/yitingcheng/Documents/Certificates/Google/Basic/8. Case Study/Case Study 2/Raw Data/sleepDay_merged.csv")
+weight_info <- read.csv("/Users/yitingcheng/Documents/Certificates/Google/Basic/8. Case Study/Case Study 2/Raw Data/weightLogInfo_merged.csv")
+```
+
+```{r}
+# Check column names
+colnames(daily_activity)
+colnames(daily_calories)
+colnames(daily_intensities)
+colnames(hourly_intensities)
+colnames(sleep_day)
+colnames(weight_info)
+```
+
+```{r}
+# Check the structure
+str(daily_activity)
+str(daily_calories)
+str(daily_intensities)
+str(hourly_intensities)
+str(sleep_day)
+str(weight_info)
+```
+
+```{r}
+# View data
+head(daily_activity)
+head(daily_calories)
+head(daily_intensities)
+head(hourly_intensities)
+head(sleep_day)
+head(weight_info)
+```
+
+## Data Processing
+
+```{r data processing}
+# Convert ActivityDate column to date format
+daily_activity$ActivityDate <- as.Date(daily_activity$ActivityDate, format="%m/%d/%Y")
+daily_activity$date <- format(daily_activity$ActivityDate, format = "%m/%d/%Y")
+
+# Convert ActivityDay column to date format
+daily_calories$ActivityDay <- as.Date(daily_calories$ActivityDay, format="%m/%d/%Y")
+
+# Convert ActivityDay column to date format
+daily_intensities$ActivityDay <- as.Date(daily_intensities$ActivityDay, format="%m/%d/%Y")
+
+# Convert the ActivityHour column to datetime format
+hourly_intensities$ActivityHour <- as.POSIXct(hourly_intensities$ActivityHour, format ="%m/%d/%Y %I:%M:%S %p")
+# Extract to date and hour
+hourly_intensities$Date <- format(hourly_intensities$ActivityHour, format = "%m/%d/%Y")
+hourly_intensities$Time <- format(hourly_intensities$ActivityHour, format = "%H:%M:%S")
+# View dataset
+head(hourly_intensities)
+
+# Convert the SleepDay column to datetime format
+sleep_day$SleepDay <- as.POSIXct(sleep_day$SleepDay, format ="%m/%d/%Y %I:%M:%S %p")
+# Extract to date
+sleep_day$date <- format(sleep_day$SleepDay, format = "%m/%d/%Y")
+# View dataset
+head(sleep_day)
+
+# Convert the Date column to datetime format
+weight_info$Date <- as.POSIXct(weight_info$Date, format ="%m/%d/%Y %I:%M:%S %p")
+# Extract to date
+weight_info$date <- format(weight_info$Date, format = "%m/%d/%Y")
+# View dataset
+head(weight_info)
+```
+
+```{r}
+# Check duplicated values
+sum(duplicated(daily_activity))
+sum(duplicated(daily_calories))
+sum(duplicated(daily_intensities))
+sum(duplicated(hourly_intensities))
+sum(duplicated(sleep_day))
+sum(duplicated(weight_info))
+```
+
+```{r}
+# Check null values
+sum(is.na(daily_activity))
+sum(is.na(daily_calories))
+sum(is.na(daily_intensities))
+sum(is.na(hourly_intensities))
+sum(is.na(sleep_day))
+sum(is.na(weight_info))
+```
+
+```{r}
+# Delete Fat column as most of the records is NA
+weight_info <- weight_info %>%
+  select(-Fat)
+
+# Drop duplicate and null values
+daily_activity <- daily_activity %>%
+  distinct() %>%
+  drop_na()
+
+daily_calories <- daily_calories %>%
+  distinct() %>%
+  drop_na()
+
+daily_intensities <- daily_intensities %>%
+  distinct() %>%
+  drop_na()
+
+hourly_intensities <- hourly_intensities %>%
+  distinct() %>%
+  drop_na()
+
+sleep_day <- sleep_day %>%
+  distinct() %>%
+  drop_na()
+
+weight_info <- weight_info %>%
+  distinct() %>%
+  drop_na()
+```
+
+## Analysis
+
+```{r}
+# Check how many ids 
+n_distinct(daily_activity$Id)
+n_distinct(daily_calories$Id)
+n_distinct(daily_intensities$Id)
+n_distinct(hourly_intensities$Id)
+n_distinct(sleep_day$Id)
+n_distinct(weight_info$Id)
+```
+
+#### Daily Activity Summary
+```{r}
+# daily_activity summary
+daily_activity %>%  
+  select(TotalSteps,
+         TotalDistance,
+         SedentaryMinutes, 
+         Calories) %>%
+  summary()
+```
+
+#### Daily Intensities Summary
+```{r}
+# daily_intensities summary
+daily_intensities %>%
+  select(VeryActiveMinutes,
+         FairlyActiveMinutes,
+         LightlyActiveMinutes,
+         SedentaryMinutes) %>%
+  summary()
+```
+
+### Hourly Intensities Summary
+```{r}
+# hourly_intensities summary
+hourly_intensities %>%
+  select(TotalIntensity,
+         AverageIntensity) %>%
+  summary()
+```
+
+#### Daily Calories Summary
+```{r}
+# daily_calories summary
+daily_calories %>%
+  select(Calories) %>%
+  summary()
+```
+
+#### Sleep Day Summary
+```{r}
+# sleep_day summary
+sleep_day %>%
+  select(TotalSleepRecords,
+         TotalMinutesAsleep,
+         TotalTimeInBed) %>%
+  summary()
+```
+
+#### Weight Info Summary
+```{r}
+# weight_info summary 
+weight_info %>%
+  select(WeightKg,
+         BMI) %>%
+  summary()
+```
+
+```{r}
+# Outer join sleep_day and daily_activity
+merged_data <- merge(sleep_day, daily_activity, by=c('Id', 'date'))
+head(merged_data)
+```
+
+## Visualization
+
+#### Relationships between Total Steps and Calories
+```{r}
+ggplot(data=daily_activity, aes(x=TotalSteps, y=Calories)) + 
+  geom_point() + geom_smooth() + labs(title="Total Steps vs. Calories")
+```
+
+Positive correlation between Total Steps and Calories. The more active we are, the more calories we burn
+
+
+#### Relationships between Total Steps and Sedentary Minutes
+```{r}
+ggplot(data=daily_activity, aes(x=TotalSteps, y=SedentaryMinutes)) + 
+  geom_point() + geom_smooth() + labs(title = "Total Steps vs. Sedentary Minutes")
+```
+
+Negative correlation between Total Steps and Sedentary Minutes. The more sedentary time we have, the less active we are. 
+This data shows that the company need to market more to customers with HIGH sedentary time which they need to find ways to educate customers about the important of walking more and also encourage them to set a daily step goal with notification informing them about their progress doing the day.
+
+
+#### Relationships between Total Minutes Asleep and Total Time in Bed
+```{r}
+ggplot(data=sleep_day, aes(x=TotalMinutesAsleep, y=TotalTimeInBed)) + 
+  geom_point()+ geom_smooth() + labs(title="Total Minutes Asleep vs. Total Time in Bed")
+```
+
+Completely Linear between Total Minutes Asleep and Total Time in Bed. To help Bellabeat users improve their sleep, the company should implement functions to notify Bellabeat users for their sleeping routine/time.
+
+
+#### Relationships between Total Minutes Asleep and Sedentary Minutes
+```{r}
+ggplot(data=merged_data, aes(x=TotalMinutesAsleep, y=SedentaryMinutes)) + 
+  geom_point() + geom_smooth() + labs(title="Minutes Asleep vs. Sedentary Minutes")
+```
+
+Negative correlation between Total Minutes Asleep and Sedentary Minutes. To help Bellabeat users improve their sleep, the company should implement functions to reduce Bellabeat users sedentary time.
+
+
+#### Relationships between Average Total Intensity and Time
+```{r}
+grouped_hourly_intensities <- hourly_intensities %>%
+  group_by(Time) %>%
+  drop_na() %>%
+  summarise(average_total_intensity = mean(TotalIntensity))
+
+ggplot(data=grouped_hourly_intensities, aes(x=Time, y=average_total_intensity)) + 
+  geom_histogram(stat = "identity", fill='darkblue') +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title="Average Total Intensity vs. Time")
+```
+
+According to the visualization, most Bellabeat users are active during 5pm - 7pm. The company could implement functions to remind and motivate Bellabeat users to exercise.
+
+
+## Conclusions
+
+So, collecting data on activity, sleep, stress, etc. will allow the company Bellabeat to empower the customers with knowledge about their own health and daily habits. The company Bellabeat is growing rapidly and quickly positioned itself as a tech-driven wellness company for their customers. By analyzing the FitBit Fitness Tracker Data set, I found some insights that would help influence Bellabeat marketing strategy.
+
+Target Audience:
+
+1. Profile
+
+Occupation: Full-time workers, likely spending significant time at a computer or in an office setting.
+
+Behavior: Engaged in light physical activity to maintain basic health but not enough to gain more substantial health benefits.
+
+2. Needs
+
+Increased Activity: These individuals need to elevate their daily physical activity to achieve better health outcomes.
+
+Healthy Habits: They might lack the knowledge or strategies to develop and sustain healthy habits.
+
+Motivation: There is a need for consistent motivation to keep them engaged in physical activity and health-related practices.
+
+3. Challenges
+
+Sedentary Lifestyle: Long hours at the computer and in the office lead to a sedentary lifestyle, increasing the risk of health issues.
+
+Time Constraints: Their busy schedules may make it difficult to incorporate more intensive or frequent physical activities.
+
+4. Potential Strategies
+
+Educational Content: Provide users with resources and information on how to develop and maintain healthy habits.
+
+Motivational Tools: Use app features like notifications, reminders, and challenges to keep users motivated and engaged.
+
+Tailored Activities: Recommend simple, effective exercises that can be done in short bursts throughout the day, especially during work breaks.
+
+Health Benefits Focus: Emphasize the long-term health benefits of increasing daily activity beyond light exercise, appealing to their desire to stay in shape and be healthy.
+
+By understanding this target audience, Bellabeat can design marketing campaigns, app features, and content that cater specifically to their needs, helping them to improve their physical activity levels and overall health.
+
+## Reccomendations
+The Bellabeat app need to be a unique fitness activity app. By becoming a companion guide (like a friend) to its users and customers and help them balance their personal and professional life with healthy habits.
+
+1. High Sedentary Time
+
+Observation: Users are spending more than 16 hours a day in sedentary activities.
+
+Implication: Excessive sedentary time poses health risks and needs to be addressed.
+
+Strategy: 
+i. Focus marketing efforts on the customer segment with high sedentary time.
+ii. Encourage users to start walking more by tracking their daily steps.
+iii. Implement app notifications to remind users to increase their activity levels.
+
+2. Average Sleep Duration
+
+Observation: Users sleep an average of 7 hours per night.
+
+Implication: While 7 hours is within a typical range, improving sleep quality could be beneficial.
+
+Strategy:
+i. Use app notifications to remind users to go to bed at an appropriate time.
+ii. Suggest reducing sedentary time as part of improving overall sleep quality.
+
+3. Steps Per Day
+
+Observation: Users are averaging 7,638 steps per day, which is below the CDC’s recommendation of 8,000 steps.
+
+Implication: Not reaching the recommended step count can increase health risks.
+
+Strategy:
+i. Encourage users to aim for at least 8,000 steps per day.
+ii. Educate users on the health benefits of reaching 8,000 to 12,000 steps daily, such as significantly lowering the risk of mortality.
+
+4. Activity Intensity
+
+Observation: Users are most active before and after work.
+
+Implication: These times are key for encouraging more physical activity.
+
+Strategy:
+i. Analyze intensity data to understand user activity patterns throughout the day.
+ii. Use peak activity times to send motivational reminders via the Bellabeat app, encouraging users to engage in activities like running or walking.
+
+5. Weight Loss and Calorie Control
+
+Observation: Some users may be focused on weight loss.
+
+Strategy: 
+i. Suggest monitoring daily calorie intake as part of weight management.
+ii. Provide users with ideas for low-calorie, healthy meals, particularly for lunch and dinner,
+
+
